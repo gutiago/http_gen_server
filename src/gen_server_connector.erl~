@@ -23,23 +23,21 @@ handle_request(Req) ->
     Module = binary_to_atom(ModToken,utf8),
     ModuleFunc = binary_to_atom(ModFuncToken,utf8),
     {ok, Body, Request} = cowboy_req:read_body(Req, #{}),
-    ArgList = [ModuleFunc | decode_arglist(Body, [])],
+    ArgList = [ModuleFunc | decode_arglist(binary_to_term(Body), [])],
     Args = list_to_tuple(ArgList),
     case GenFunc of 
         <<"call">> ->
             Response = gen_server:call({global,Module}, Args ),
-	    io:format("Call response ~p~n",[Response]),
+	    %%io:format("Call response ~p~n",[Response]),
 	    cowboy_req:reply(200, #{}, term_to_binary(Response), Request);
         <<"cast">> -> 
             Response = gen_server:call({global,Module}, Args),
-	    io:format("Cast response ~p~n",[Response]),
+	    %%io:format("Cast response ~p~n",[Response]),
             cowboy_req:reply(200, #{}, term_to_binary(Response), Request);
         _ -> 
-            cowboy_req:reply(200, #{}, "No method found", Request)
+            cowboy_req:reply(404, #{}, "No method found", Request)
     end.
 
-decode_arglist(B, []) ->
-    decode_arglist( binary_to_term(B),[]);
 decode_arglist([], R) ->
     lists:reverse(R);
 decode_arglist([H|T], R) ->
